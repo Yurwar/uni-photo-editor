@@ -9,20 +9,20 @@ package object editor extends BoxBlurKernelInterface {
   type RGBA = Int
 
   /** Returns the red component. */
-  def red(c: RGBA): Int = (0xff000000 & c) >>> 24
+  def alpha(c: RGBA): Int = (0xff000000 & c) >>> 24
 
   /** Returns the green component. */
-  def green(c: RGBA): Int = (0x00ff0000 & c) >>> 16
+  def red(c: RGBA): Int = (0x00ff0000 & c) >>> 16
 
   /** Returns the blue component. */
-  def blue(c: RGBA): Int = (0x0000ff00 & c) >>> 8
+  def green(c: RGBA): Int = (0x0000ff00 & c) >>> 8
 
   /** Returns the alpha component. */
-  def alpha(c: RGBA): Int = (0x000000ff & c) >>> 0
+  def blue(c: RGBA): Int = (0x000000ff & c) >>> 0
 
   /** Used to create an RGBA value from separate components. */
   def rgba(r: Int, g: Int, b: Int, a: Int): RGBA = {
-    (r << 24) | (g << 16) | (b << 8) | (a << 0)
+    (a << 24) | (r << 16) | (g << 8) | (b << 0)
   }
 
   /** Restricts the integer into the specified range. */

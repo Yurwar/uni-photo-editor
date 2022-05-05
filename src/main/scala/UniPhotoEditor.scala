@@ -50,6 +50,7 @@ object UniPhotoEditor {
 
     val info = new JTextArea("   ")
     info.setBorder(BorderFactory.createLoweredBevelBorder)
+    info.setEditable(false)
     rightpanel.add(info, BorderLayout.SOUTH)
 
     val leftpannel = new JPanel
@@ -95,14 +96,26 @@ object UniPhotoEditor {
     setJMenuBar(mainMenuBar)
 
     val canvas = new PhotoCanvas
+    canvas.addMouseMotionListener(new MouseMotionAdapter {
+      override def mouseMoved(e: MouseEvent): Unit = {
+        val x = e.getX / 30
+        val y = e.getY / 30
+        println(s"x=$x, y=$y")
+        if (x < canvas.image.width && y < canvas.image.height) {
+          val rgba = canvas.image.apply(x, y)
+          val brightness = 0.3 * red(rgba) + 0.59 * green(rgba) + 0.11 * blue(rgba)
+          updatePointBrightnessBox(brightness)
+        }
+      }
+    })
 
     val scrollPane = new JScrollPane(canvas)
 
     add(scrollPane, BorderLayout.CENTER)
     setVisible(true)
 
-    def updateInformationBox(time: Double): Unit = {
-      info.setText(s"Time: $time")
+    def updatePointBrightnessBox(brightness: Double): Unit = {
+      info.setText(f"Brightness of current point: $brightness%1.2f")
     }
 
     def getRadius: Int = radiusSpinner.getValue.asInstanceOf[Int]
