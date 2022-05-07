@@ -4,31 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="b1c7db89-81b8-4534-aaca-151c714977db" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/codeStyleConfig.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/libraries/sbt__org_scala_lang_scala_library_2_13_8_jar.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules/uni-photo-editor-build.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/modules/uni-photo-editor.iml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sbt.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/scala_compiler.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/sonarlint/issuestore/index.pb" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/uiDesigner.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/build.sbt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/project/build.properties" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/project/plugins.sbt" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/images/img.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/HorizontalBoxBlur.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/Interfaces.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/PhotoCanvas.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/UniPhotoEditor.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/VerticalBoxBlur.scala" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/scala/package.scala" afterDir="false" />
-    </list>
+    <list default="true" id="b1c7db89-81b8-4534-aaca-151c714977db" name="Changes" comment="Add gaussian blur, negate, binarize, grayscale and histograms" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -46,6 +22,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Scala Object" />
+        <option value="Package Object" />
       </list>
     </option>
   </component>
@@ -70,6 +47,8 @@
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+    "SONARLINT_PRECOMMIT_ANALYSIS": "true",
+    "TF_FMT": "false",
     "WebServerToolWindowFactoryState": "false",
     "last_opened_file_path": "/home/yurii/Projects/University/uni-photo-editor/uni-photo-editor/src/main/scala",
     "node.js.detected.package.eslint": "true",
@@ -92,7 +71,7 @@
       <module name="uni-photo-editor" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.yurwar.uni.photo.editor.*" />
+          <option name="PATTERN" value="com.yurwar.uni.photo.editor.HorizontalBoxBlurInterface" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -105,7 +84,7 @@
       <module name="uni-photo-editor" />
       <extension name="coverage">
         <pattern>
-          <option name="PATTERN" value="com.yurwar.uni.photo.editor.*" />
+          <option name="PATTERN" value="com.yurwar.uni.photo.editor.HorizontalBoxBlurInterface" />
           <option name="ENABLED" value="true" />
         </pattern>
       </extension>
@@ -130,6 +109,14 @@
       <updated>1651766889533</updated>
       <workItem from="1651766891353" duration="6192000" />
     </task>
+    <task id="LOCAL-00001" summary="Add gaussian blur, negate, binarize, grayscale and histograms">
+      <created>1651958040528</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1651958040528</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -145,5 +132,20 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Add gaussian blur, negate, binarize, grayscale and histograms" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add gaussian blur, negate, binarize, grayscale and histograms" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="scala-line">
+          <url>file://$PROJECT_DIR$/src/main/scala/HorizontalTraversalHandler.scala</url>
+          <line>13</line>
+          <option name="timeStamp" value="18" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

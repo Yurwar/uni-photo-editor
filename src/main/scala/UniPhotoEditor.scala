@@ -1,5 +1,10 @@
 package com.yurwar.uni.photo.editor
 
+import org.jfree.chart.plot.{PlotOrientation, XYPlot}
+import org.jfree.chart.renderer.xy.SamplingXYLineRenderer
+import org.jfree.chart.{ChartFactory, ChartPanel, JFreeChart}
+import org.jfree.data.xy.{XYSeries, XYSeriesCollection}
+
 import java.awt._
 import java.awt.event._
 import javax.swing._
@@ -25,7 +30,12 @@ object UniPhotoEditor {
 
     val filterCombo = new JComboBox(Array(
       "horizontal-box-blur",
-      "vertical-box-blur"
+      "vertical-box-blur",
+      "binarize",
+      "binarize-by-channels",
+      "grayscale",
+      "negate",
+      "gaussian"
     ))
     controls.add(filterCombo)
 
@@ -35,16 +45,25 @@ object UniPhotoEditor {
     val radiusSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 16, 1))
     controls.add(radiusSpinner)
 
+    val thresholdLabel = new JLabel("Threshold")
+    controls.add(thresholdLabel)
+
+    val thresholdSlider = new JSlider(new DefaultBoundedRangeModel(50, 1, 0, 101))
+    controls.add(thresholdSlider)
+
     val stepbutton = new JButton("Apply filter")
+
     stepbutton.addActionListener((_: ActionEvent) => {
       val numTasks = 32
-      canvas.applyFilter(getFilterName, numTasks, getRadius)
+      canvas.applyFilter(getFilterName, numTasks, getRadius, getThreshold)
+      updateHistograms()
     })
     controls.add(stepbutton)
 
     val clearButton = new JButton("Reload")
     clearButton.addActionListener((_: ActionEvent) => {
       canvas.reload()
+      updateHistograms()
     })
     controls.add(clearButton)
 
@@ -59,11 +78,8 @@ object UniPhotoEditor {
     add(leftpannel, BorderLayout.WEST)
 
     val histograms = new JPanel
-    histograms.setLayout(new GridLayout(4, 1))
+    histograms.setLayout(new GridLayout(2, 1))
     leftpannel.add(histograms, BorderLayout.NORTH)
-
-    val testLabel = new JLabel("Test")
-    histograms.add(testLabel)
 
     val mainMenuBar = new JMenuBar()
 
@@ -98,13 +114,12 @@ object UniPhotoEditor {
     val canvas = new PhotoCanvas
     canvas.addMouseMotionListener(new MouseMotionAdapter {
       override def mouseMoved(e: MouseEvent): Unit = {
-        val x = e.getX / 30
-        val y = e.getY / 30
-        println(s"x=$x, y=$y")
+        val x = e.getX
+        val y = e.getY
         if (x < canvas.image.width && y < canvas.image.height) {
           val rgba = canvas.image.apply(x, y)
           val brightness = 0.3 * red(rgba) + 0.59 * green(rgba) + 0.11 * blue(rgba)
-          updatePointBrightnessBox(brightness)
+          updatePointBrightnessBox(brightness, x, y)
         }
       }
     })
@@ -112,18 +127,111 @@ object UniPhotoEditor {
     val scrollPane = new JScrollPane(canvas)
 
     add(scrollPane, BorderLayout.CENTER)
+
+    val colorHistogram: ChartPanel = getColorHistogram
+    histograms.add(colorHistogram)
+
+    val grayscaleHistogram: ChartPanel = getGrayscaleHistogram
+    histograms.add(grayscaleHistogram)
+
     setVisible(true)
 
-    def updatePointBrightnessBox(brightness: Double): Unit = {
-      info.setText(f"Brightness of current point: $brightness%1.2f")
+    def updatePointBrightnessBox(brightness: Double, x: Int, y: Int): Unit = {
+      info.setText(f"Brightness of current point: $brightness%1.2f, x = $x; y = $y")
     }
 
-    def getRadius: Int = radiusSpinner.getValue.asInstanceOf[Int]
+    def getRadius: RGBA = radiusSpinner.getValue.asInstanceOf[RGBA]
+
+    def getThreshold: RGBA = thresholdSlider.getValue
 
     def getFilterName: String = {
       filterCombo.getSelectedItem.asInstanceOf[String]
     }
 
+    private def updateHistograms(): Unit = {
+      grayscaleHistogram.getChart.getPlot.asInstanceOf[XYPlot].setDataset(collectGrayscaleDataset)
+      colorHistogram.getChart.getPlot.asInstanceOf[XYPlot].setDataset(collectColorDataset)
+    }
+
+    private def getGrayscaleHistogram: ChartPanel = {
+      val grayscaleDataset: XYSeriesCollection = collectGrayscaleDataset
+
+      val grayscaleChart: JFreeChart = ChartFactory.createHistogram(
+        "Grayscale histogram",
+        "Gray value",
+        "Pixel count",
+        grayscaleDataset,
+        PlotOrientation.VERTICAL,
+        false,
+        false,
+        false
+      )
+      val grayscalePlot: XYPlot = grayscaleChart.getXYPlot
+      val grayscaleRenderer: SamplingXYLineRenderer = new SamplingXYLineRenderer()
+      grayscaleRenderer.setSeriesPaint(0, Color.GRAY)
+      grayscaleRenderer.setSeriesStroke(0, new BasicStroke(1.2f))
+      grayscalePlot.setRenderer(grayscaleRenderer)
+      val grayscaleChartPanel = new ChartPanel(grayscaleChart)
+      grayscaleChartPanel.setPreferredSize(new Dimension(300, 300))
+      grayscaleChartPanel
+    }
+
+    private def collectGrayscaleDataset = {
+      val graySeries = new XYSeries("Gray")
+      canvas.getGrayscaleStat
+        .foreachEntry((value, count) => graySeries.add(value, count))
+
+      val grayscaleDataset = new XYSeriesCollection
+      grayscaleDataset.addSeries(graySeries)
+      grayscaleDataset
+    }
+
+    private def getColorHistogram: ChartPanel = {
+      val dataset: XYSeriesCollection = collectColorDataset
+
+      val xyChart = ChartFactory.createHistogram(
+        "Color histograms",
+        "Color value",
+        "Pixel count",
+        dataset,
+        PlotOrientation.VERTICAL,
+        false,
+        false,
+        false
+      )
+
+      val plot: XYPlot = xyChart.getXYPlot
+      val renderer: SamplingXYLineRenderer = new SamplingXYLineRenderer()
+      renderer.setSeriesPaint(0, Color.RED)
+      renderer.setSeriesPaint(1, Color.GREEN)
+      renderer.setSeriesPaint(2, Color.BLUE)
+      renderer.setSeriesStroke(0, new BasicStroke(1.2f))
+      renderer.setSeriesStroke(1, new BasicStroke(1.2f))
+      renderer.setSeriesStroke(2, new BasicStroke(1.2f))
+      plot.setRenderer(renderer)
+
+      val chartPanel = new ChartPanel(xyChart)
+      chartPanel.setPreferredSize(new Dimension(300, 300))
+      chartPanel
+    }
+
+    private def collectColorDataset = {
+      val redSeries = new XYSeries("Red")
+      val greenSeries = new XYSeries("Green")
+      val blueSeries = new XYSeries("Blue")
+      canvas.getColorStat("red")
+        .foreachEntry((value, count) => redSeries.add(value, count))
+      canvas.getColorStat("green")
+        .foreachEntry((value, count) => greenSeries.add(value, count))
+      canvas.getColorStat("blue")
+        .foreachEntry((value, count) => blueSeries.add(value, count))
+
+      val dataset = new XYSeriesCollection
+      dataset.addSeries(redSeries)
+      dataset.addSeries(greenSeries)
+      dataset.addSeries(blueSeries)
+      dataset
+    }
   }
 
   try {

@@ -12,7 +12,7 @@ object HorizontalBoxBlur extends HorizontalBoxBlurInterface {
     for (row <- 0 until src.width;
          col <- from until end if col >= 0 && col <= src.height)
     yield
-      dst.update(row, col, boxBlurKernel(src, row, col, radius))
+      dst.update(row, col, boxBlurKernel(radius)(src, row, col))
   }
 
   /** Blurs the rows of the source image in parallel using `numTasks` tasks.

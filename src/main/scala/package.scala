@@ -3,7 +3,11 @@ package com.yurwar.uni.photo
 import java.util.concurrent._
 import scala.util.DynamicVariable
 
-package object editor extends BoxBlurKernelInterface {
+package object editor extends BoxBlurKernelInterface
+  with NegateKernelInterface
+  with BinarizeKernelInterface
+  with GrayscaleKernelInterface
+  with GaussianBlurKernelInterface {
 
   /** The value of every pixel is represented as a 32 bit integer. */
   type RGBA = Int
@@ -25,6 +29,10 @@ package object editor extends BoxBlurKernelInterface {
     (a << 24) | (r << 16) | (g << 8) | (b << 0)
   }
 
+  def brightness(rgba: RGBA): Int = {
+    (0.3 * red(rgba) + 0.59 * green(rgba) + 0.11 * blue(rgba)).round.toInt
+  }
+
   /** Restricts the integer into the specified range. */
   def clamp(v: Int, min: Int, max: Int): Int = {
     if (v < min) min
@@ -40,7 +48,7 @@ package object editor extends BoxBlurKernelInterface {
   }
 
   /** Computes the blurred RGBA value of a single pixel of the input image. */
-  def boxBlurKernel(src: Img, x: Int, y: Int, radius: Int): RGBA = {
+  override def boxBlurKernel(radius: Int)(src: Img, x: Int, y: Int): RGBA = {
     val minX = clamp(x - radius, 0, src.width - 1)
     val minY = clamp(y - radius, 0, src.height - 1)
     val maxX = clamp(x + radius, 0, src.width - 1)
@@ -69,20 +77,86 @@ package object editor extends BoxBlurKernelInterface {
       xi += 1
       yi = minY
     }
-    rgba(r/pixelCounter, g/pixelCounter, b/pixelCounter, a/pixelCounter)
+    rgba(r / pixelCounter, g / pixelCounter, b / pixelCounter, a / pixelCounter)
+  }
+
+
+  override def gaussianBlurKernel(radius: Int, weightedMatrix: Array[Array[Double]])(src: Img, x: Int, y: Int): RGBA = {
+    var r = 0
+    var g = 0
+    var b = 0
+    for (weightX <- weightedMatrix.indices;
+         weightY <- weightedMatrix(weightX).indices)
+    yield {
+      var sampleX = x + weightX - radius
+      var sampleY = y + weightY - radius
+      if (sampleX > src.width - 1) {
+        sampleX = 2 * src.width - 1 - sampleX
+      }
+      if (sampleY > src.height - 1) {
+        sampleY = 2 * src.height - 1 - sampleY
+      }
+      if (sampleX < 0) {
+        sampleX = math.abs(sampleX)
+      }
+      if (sampleY < 0) {
+        sampleY = math.abs(sampleY)
+      }
+      val currWeight = weightedMatrix(weightX)(weightY)
+      val currPixel = src(sampleX, sampleY)
+      r += (currWeight * red(currPixel)).round.toInt
+      g += (currWeight * green(currPixel)).round.toInt
+      b += (currWeight * blue(currPixel)).round.toInt
+    }
+
+    rgba(r, g, b, alpha(src(x, y)))
+  }
+
+  override def negateKernel(src: Img, x: Int, y: Int): RGBA = {
+    val currPixel = src(x, y)
+    val r = 255 - red(currPixel)
+    val g = 255 - green(currPixel)
+    val b = 255 - blue(currPixel)
+    val a = alpha(currPixel)
+
+    rgba(r, g, b, a)
+  }
+
+
+  override def binarizeKernel(threshold: Int)(src: Img, x: Int, y: Int): RGBA = {
+    val currPixel = src(x, y)
+    val currPixelSum = red(currPixel) + green(currPixel) + blue(currPixel)
+    val rgbThreshold = (255 * 3) * (threshold / 100.0)
+    if (currPixelSum <= rgbThreshold) {
+      rgba(0, 0, 0, alpha(currPixel))
+    } else {
+      rgba(255, 255, 255, alpha(currPixel))
+    }
+  }
+
+
+  override def binarizeByChannelsKernel(threshold: Int)(src: Img, x: Int, y: Int): RGBA = {
+    val currPixel = src(x, y)
+    val colourThreshold = 255 * (threshold / 100.0)
+    val r = if (red(currPixel) <= colourThreshold) 0 else 255
+    val g = if (green(currPixel) <= colourThreshold) 0 else 255
+    val b = if (blue(currPixel) <= colourThreshold) 0 else 255
+
+    rgba(r, g, b, alpha(currPixel))
+  }
+
+
+  override def grayscaleKernel(src: Img, x: Int, y: Int): RGBA = {
+    val currPixel = src(x, y)
+    val b = brightness(currPixel)
+
+    rgba(b, b, b, alpha(currPixel))
   }
 
   val forkJoinPool = new ForkJoinPool
 
   abstract class TaskScheduler {
     def schedule[T](body: => T): ForkJoinTask[T]
-    def parallel[A, B](taskA: => A, taskB: => B): (A, B) = {
-      val right = task {
-        taskB
-      }
-      val left = taskA
-      (left, right.join())
-    }
   }
 
   class DefaultTaskScheduler extends TaskScheduler {
@@ -91,7 +165,7 @@ package object editor extends BoxBlurKernelInterface {
         def compute: T = body
       }
       Thread.currentThread match {
-        case wt: ForkJoinWorkerThread =>
+        case _: ForkJoinWorkerThread =>
           t.fork()
         case _ =>
           forkJoinPool.execute(t)
@@ -105,17 +179,5 @@ package object editor extends BoxBlurKernelInterface {
 
   def task[T](body: => T): ForkJoinTask[T] = {
     scheduler.value.schedule(body)
-  }
-
-  def parallel[A, B](taskA: => A, taskB: => B): (A, B) = {
-    scheduler.value.parallel(taskA, taskB)
-  }
-
-  def parallel[A, B, C, D](taskA: => A, taskB: => B, taskC: => C, taskD: => D): (A, B, C, D) = {
-    val ta = task { taskA }
-    val tb = task { taskB }
-    val tc = task { taskC }
-    val td = taskD
-    (ta.join(), tb.join(), tc.join(), td)
   }
 }

@@ -5,6 +5,7 @@ import java.awt.image._
 import java.io._
 import javax.imageio._
 import javax.swing._
+import scala.collection.mutable
 
 class PhotoCanvas extends JComponent {
 
@@ -56,18 +57,72 @@ class PhotoCanvas extends JComponent {
     reload()
   }
 
-  def applyFilter(filterName: String, numTasks: Int, radius: Int): Unit = {
+  def applyFilter(filterName: String, numTasks: Int, radius: Int, threshold: Int): Unit = {
     val dst = new Img(image.width, image.height)
     filterName match {
       case "horizontal-box-blur" =>
-        HorizontalBoxBlur.parBlur(image, dst, numTasks, radius)
+        HorizontalTraversalHandler.traverse(image, dst, boxBlurKernel(radius))
       case "vertical-box-blur" =>
         VerticalBoxBlur.parBlur(image, dst, numTasks, radius)
-      case "" =>
+      case "negate" =>
+        HorizontalTraversalHandler.traverseSequential(image, dst, negateKernel)
+      case "binarize" =>
+        HorizontalTraversalHandler.traverseSequential(image, dst, binarizeKernel(threshold))
+      case "binarize-by-channels" =>
+        HorizontalTraversalHandler.traverseSequential(image, dst, binarizeByChannelsKernel(threshold))
+      case "grayscale" =>
+        HorizontalTraversalHandler.traverseSequential(image, dst, grayscaleKernel)
+      case "gaussian" =>
+        GaussianBlur.blur(image, dst, radius, 1.5)
     }
     image = dst
     repaint()
   }
+
+  def getColorStat: Map[String, mutable.Map[Int, Int]] = {
+    val reds = mutable.Map.empty[Int, Int].withDefaultValue(0)
+    for (i <- 0 to 255) {
+      reds(i) = 0
+    }
+    val greens = mutable.Map.empty[Int, Int].withDefaultValue(0)
+    for (i <- 0 to 255) {
+      greens(i) = 0
+    }
+    val blues = mutable.Map.empty[Int, Int].withDefaultValue(0)
+    for (i <- 0 to 255) {
+      blues(i) = 0
+    }
+    for (row <- 0 until image.width;
+         col <- 0 until image.height if col >= 0 && col <= image.height)
+    yield {
+      val rgba = image(row, col)
+      val r = red(rgba)
+      val g = green(rgba)
+      val b = blue(rgba)
+      reds(r) += 1
+      greens(g) += 1
+      blues(b) += 1
+    }
+    Map("red" -> reds, "green" -> greens, "blue" -> blues)
+  }
+
+  def getGrayscaleStat: mutable.Map[Int, Int] = {
+    val grays = mutable.Map.empty[Int, Int].withDefaultValue(0)
+    for (i <- 0 to 255) {
+      grays(i) = 0
+    }
+    val grayscaleImg = new Img(image.width, image.height)
+    HorizontalTraversalHandler.traverse(image, grayscaleImg, grayscaleKernel)
+    for (row <- 0 until grayscaleImg.width;
+         col <- 0 until grayscaleImg.height if col >= 0 && col <= grayscaleImg.height)
+    yield {
+      val rgba = image(row, col)
+      val gray = brightness(rgba)
+      grays(gray) += 1
+    }
+    grays
+  }
+
 
   override def paintComponent(gcan: Graphics): Unit = {
     super.paintComponent(gcan)

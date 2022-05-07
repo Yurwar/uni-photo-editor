@@ -13,7 +13,7 @@ object VerticalBoxBlur extends VerticalBoxBlurInterface {
     for (row <- from until end if row >= 0 && row <= src.width;
          col <- 0 until src.height)
     yield
-      dst.update(row, col, boxBlurKernel(src, row, col, radius))
+      dst.update(row, col, boxBlurKernel(radius)(src, row, col))
   }
 
   /** Blurs the columns of the source image in parallel using `numTasks` tasks.
