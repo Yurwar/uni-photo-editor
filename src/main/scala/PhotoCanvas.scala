@@ -7,6 +7,9 @@ import javax.imageio._
 import javax.swing._
 import scala.collection.mutable
 
+/**
+ * Клас що містить в собі зображення для відображення його у інтерфейсі користувача
+ */
 class PhotoCanvas extends JComponent {
 
   var imagePath: Option[String] = None
@@ -17,6 +20,9 @@ class PhotoCanvas extends JComponent {
     new Dimension(image.width, image.height)
   }
 
+  /**
+   * @return Завантажує зображення за замовчуванням
+   */
   private def loadDefaultImage(): Img = {
     val stream = this.getClass.getResourceAsStream("/images/img.png")
     try {
@@ -26,6 +32,10 @@ class PhotoCanvas extends JComponent {
     }
   }
 
+  /**
+   * @param path Шлях до зображення
+   * @return Зображення по заданому шляху
+   */
   private def loadFileImage(path: String): Img = {
     val stream = new FileInputStream(path)
     try {
@@ -44,6 +54,9 @@ class PhotoCanvas extends JComponent {
     img
   }
 
+  /**
+   * Функція для оновлення зображення до початкового
+   */
   def reload(): Unit = {
     image = imagePath match {
       case Some(path) => loadFileImage(path)
@@ -57,13 +70,15 @@ class PhotoCanvas extends JComponent {
     reload()
   }
 
-  def applyFilter(filterName: String, numTasks: Int, radius: Int, threshold: Int): Unit = {
+  /** Функція для накладання обраного фільтру на поточне зображення
+   *
+   * @param filterName Назва фільтру
+   * @param radius     Радіус для фільтру
+   * @param threshold  Порогове значення для фільтру
+   */
+  def applyFilter(filterName: String, radius: Int, threshold: Int): Unit = {
     val dst = new Img(image.width, image.height)
     filterName match {
-      case "horizontal-box-blur" =>
-        HorizontalTraversalHandler.traverse(image, dst, boxBlurKernel(radius))
-      case "vertical-box-blur" =>
-        VerticalBoxBlur.parBlur(image, dst, numTasks, radius)
       case "negate" =>
         HorizontalTraversalHandler.traverseSequential(image, dst, negateKernel)
       case "binarize" =>
@@ -74,11 +89,16 @@ class PhotoCanvas extends JComponent {
         HorizontalTraversalHandler.traverseSequential(image, dst, grayscaleKernel)
       case "gaussian" =>
         GaussianBlur.blur(image, dst, radius, 1.5)
+      case "modified-cut" =>
+        ModifiedCutFilter.modifiedCut(image, dst)
     }
     image = dst
     repaint()
   }
 
+  /**
+   * @return Статистика частот кольорів для побудови багатоканальної гістограми
+   */
   def getColorStat: Map[String, mutable.Map[Int, Int]] = {
     val reds = mutable.Map.empty[Int, Int].withDefaultValue(0)
     for (i <- 0 to 255) {
@@ -106,6 +126,9 @@ class PhotoCanvas extends JComponent {
     Map("red" -> reds, "green" -> greens, "blue" -> blues)
   }
 
+  /**
+   * @return Статистика частот кольорів для побудови гістограми відтінків сірого
+   */
   def getGrayscaleStat: mutable.Map[Int, Int] = {
     val grays = mutable.Map.empty[Int, Int].withDefaultValue(0)
     for (i <- 0 to 255) {

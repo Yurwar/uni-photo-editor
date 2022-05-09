@@ -11,11 +11,15 @@ import javax.swing._
 
 object UniPhotoEditor {
 
-  class UniPhotoEditorFrame extends JFrame("UniPhotoEditor\u2122") {
+  /**
+   * Клас головного вікна застосунку
+   */
+  class UniPhotoEditorFrame extends JFrame("UniPhotoEditor\uD83C\uDDFA\uD83C\uDDE6") {
     setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE)
-    setSize(1024, 600)
+    setSize(1600, 896)
     setLayout(new BorderLayout)
 
+    // Ініціалізація панелі з фільтрами та контролем над ними
     val rightpanel = new JPanel
     rightpanel.setBorder(BorderFactory.createEtchedBorder(border.EtchedBorder.LOWERED))
     rightpanel.setLayout(new BorderLayout)
@@ -29,13 +33,12 @@ object UniPhotoEditor {
     controls.add(filterLabel)
 
     val filterCombo = new JComboBox(Array(
-      "horizontal-box-blur",
-      "vertical-box-blur",
       "binarize",
       "binarize-by-channels",
       "grayscale",
       "negate",
-      "gaussian"
+      "gaussian",
+      "modified-cut"
     ))
     controls.add(filterCombo)
 
@@ -54,8 +57,8 @@ object UniPhotoEditor {
     val stepbutton = new JButton("Apply filter")
 
     stepbutton.addActionListener((_: ActionEvent) => {
-      val numTasks = 32
-      canvas.applyFilter(getFilterName, numTasks, getRadius, getThreshold)
+      canvas.applyFilter(getFilterName, getRadius, getThreshold)
+      // Оновлює гістраграми після накладання фільтру
       updateHistograms()
     })
     controls.add(stepbutton)
@@ -63,6 +66,7 @@ object UniPhotoEditor {
     val clearButton = new JButton("Reload")
     clearButton.addActionListener((_: ActionEvent) => {
       canvas.reload()
+      // Оновлює гістраграми після перезавантаження зображення
       updateHistograms()
     })
     controls.add(clearButton)
@@ -72,6 +76,7 @@ object UniPhotoEditor {
     info.setEditable(false)
     rightpanel.add(info, BorderLayout.SOUTH)
 
+    // Побудова панелі з гістограмами
     val leftpannel = new JPanel
     leftpannel.setBorder(BorderFactory.createEtchedBorder(border.EtchedBorder.RAISED))
     leftpannel.setLayout(new BorderLayout)
@@ -81,6 +86,7 @@ object UniPhotoEditor {
     histograms.setLayout(new GridLayout(2, 1))
     leftpannel.add(histograms, BorderLayout.NORTH)
 
+    // Побудова панелі верхнього меню
     val mainMenuBar = new JMenuBar()
 
     val fileMenu = new JMenu("File")
@@ -111,7 +117,10 @@ object UniPhotoEditor {
 
     setJMenuBar(mainMenuBar)
 
+    // Побудова основного вікна з зображенням
     val canvas = new PhotoCanvas
+    // Додавання слухача подій який відображає значення яскравості для пікселя
+    // на який наведена мишка
     canvas.addMouseMotionListener(new MouseMotionAdapter {
       override def mouseMoved(e: MouseEvent): Unit = {
         val x = e.getX
@@ -128,14 +137,17 @@ object UniPhotoEditor {
 
     add(scrollPane, BorderLayout.CENTER)
 
+    // Побудова кольорової гістограми
     val colorHistogram: ChartPanel = getColorHistogram
     histograms.add(colorHistogram)
 
+    // Побудова гістограми градацій сірого
     val grayscaleHistogram: ChartPanel = getGrayscaleHistogram
     histograms.add(grayscaleHistogram)
 
     setVisible(true)
 
+    // Оновлення текстового поля яскравості
     def updatePointBrightnessBox(brightness: Double, x: Int, y: Int): Unit = {
       info.setText(f"Brightness of current point: $brightness%1.2f, x = $x; y = $y")
     }
@@ -153,6 +165,7 @@ object UniPhotoEditor {
       colorHistogram.getChart.getPlot.asInstanceOf[XYPlot].setDataset(collectColorDataset)
     }
 
+    // Метод що будує гістаграму градацій сірого
     private def getGrayscaleHistogram: ChartPanel = {
       val grayscaleDataset: XYSeriesCollection = collectGrayscaleDataset
 
@@ -186,6 +199,7 @@ object UniPhotoEditor {
       grayscaleDataset
     }
 
+    // Метод що будує гістаграму по трьом складовим RGB
     private def getColorHistogram: ChartPanel = {
       val dataset: XYSeriesCollection = collectColorDataset
 

@@ -1,5 +1,8 @@
 package com.yurwar.uni.photo.editor
 
+/**
+ * Інтерфейс для методів горизонтального обходу зображення
+ */
 trait HorizontalTraversalInterface {
   def traverse(src: Img, dst: Img,
                handler: (Img, Int, Int) => RGBA): Unit
@@ -7,37 +10,45 @@ trait HorizontalTraversalInterface {
                          handler: (Img, Int, Int) => RGBA): Unit
 }
 
-trait HorizontalBoxBlurInterface {
-  def blur(src: Img, dst: Img, from: Int, end: Int, radius: Int): Unit
-  def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit
-}
-
-trait VerticalBoxBlurInterface {
-  def blur(src: Img, dst: Img, from: Int, end: Int, radius: Int): Unit
-  def parBlur(src: Img, dst: Img, numTasks: Int, radius: Int): Unit
-}
-
+/**
+ * Інтерфейс для методів Гаусівського фільтру
+ */
 trait GaussianBlurInterface {
   def blur(src: Img, dst: Img, radius: Int, variance: Double): Unit
 }
 
-trait BoxBlurKernelInterface {
-  def boxBlurKernel(radius: Int)(src: Img, x: Int, y: Int): RGBA
-}
-
+/**
+ * Інтерфейс для методів негативу
+ */
 trait NegateKernelInterface {
   def negateKernel(src: Img, x: Int, y: Int): RGBA
 }
 
+/**
+ * Інтерфейс для методів бінаризації
+ */
 trait BinarizeKernelInterface {
   def binarizeKernel(threshold: Int)(src: Img, x: Int, y: Int): RGBA
   def binarizeByChannelsKernel(threshold: Int)(src: Img, x: Int, y: Int): RGBA
 }
 
+/**
+ * Інтерфейс для методів перетворення у відтінки сірого
+ */
 trait GrayscaleKernelInterface {
   def grayscaleKernel(src: Img, x: Int, y: Int): RGBA
 }
 
+/**
+ * Інтерфейс для методів розмиття по Гаусу ядра зображення
+ */
 trait GaussianBlurKernelInterface {
   def gaussianBlurKernel(radius: Int, weightedMatrix: Array[Array[Double]])(src: Img, x: Int, y: Int): RGBA
+}
+
+/**
+ * Інтерфейс для методів модифікованого обрізного фільтру
+ */
+trait ModifiedCutFilterInterface {
+  def modifiedCut(src: Img, dst: Img): Unit
 }
